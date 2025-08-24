@@ -213,6 +213,7 @@ class Metricsdeploy:
         mlflow.log_metrics(precision)
         mlflow.log_metrics(recall)
         mlflow.log_metrics(f1)
+
         
 
         print("Métricas de Clasificación:")
