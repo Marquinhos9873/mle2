@@ -39,7 +39,7 @@ from loguru
 
 
 class FeatureProcessor:
-    def __init__(self, datos: pd.DataFrame, name_pipeline: str,  columnas: tuple[str, ...], components: int):
+    def __init__(self, datos: pd.DataFrame, name_pipeline: str,  columnas: list, components = 2):
         
         self.datos = datos
         self.name_pipeline = name_pipeline
@@ -72,13 +72,13 @@ class FeatureProcessor:
 #Una ves que se creen los pca_features agregarse al dataset final
 
 
-    def run(self, columnas_promedio: tuple[str, ...]) -> pd.DataFrame:
+    def run(self, columnas_promedio: list) -> pd.DataFrame:
         
         #tengo un problema con el pyproject vim/nano
         #logger.info(f"Inicializando pipeline {self.name_pipeline}")
         #numerics = self.scale()
         
-        pipe_df, variance_ratio = self.scale(columnas = columnas_promedio)
+        pipe_df, variance_ratio = self.scale()
         media_stress = (self.datos[list(columnas_promedio)].mean(axis=1))
         media_df = pd.DataFrame({"stress_exposure_mean": media_stress})
         modeling_dataset = pd.concat([pipe_df, media_df], axis=1)
@@ -98,7 +98,7 @@ class FeatureProcessor:
     def write_feature_table(self, filepath: str) -> None:
         """Escribimos la feature table final para modelamiento
         """
-
+    #if self.feature_table is not None and not self.feature_table.empty:
         if not self.feature_table.empty: # -> True o False
             self.feature_table.to_parquet(f"{filepath}.parquet", index=False)
             self.feature_table.to_csv(f"{filepath}.csv", index=False)
@@ -115,22 +115,23 @@ class GuardadoFeature:
     
 
 
-class Procesoexperimento:
-    def proceso_epsilon(n_muestreo: int , ):
-        #Numero de muestreo = valor definido para ver donde esta el alza en la varianza
+class expermientoepsilon:
+    def proceso_epsilon(self, n_muestreo: int, scaler_method, data): 
         neighbors = NearestNeighbors(n_neighbors=n_muestreo)
+        pipeline = Pipeline([("scaler", scaler_method)])
+        X_scaled = pipeline.fit_transform(data)
         neighbors_fit = neighbors.fit(X_scaled)
         distances, indices = neighbors_fit.kneighbors(X_scaled)
         
-        # Ordenar las distancias al k-ésimo vecino
-        distances = np.sort(distances[:, min_samples-1])
+        
+        distances = np.sort(distances[:, n_muestreo-1])
         plt.plot(distances)
-        plt.ylabel("Distancia al {}-ésimo vecino".format(min_samples))
+        plt.ylabel(f"Distancia al {n_muestreo}-ésimo vecino")
         plt.xlabel("Puntos ordenados")
         plt.show()
     
         kneighbors_eps = input('Valor aproximado para el epsilon en base al grafico:')
-        dbscan = DBSCAN(eps=kneighbors_eps, min_samples=minimun_samples)
+        dbscan = DBSCAN(eps=kneighbors_eps, min_samples=n_muestreo)
         labels = dbscan.fit_predict(X_scaled)
 
         return
@@ -141,63 +142,64 @@ class Procesoexperimento:
 
 #deberia usar calses para llamar a las funciones y solo depender de ingresar los argumentos?, en ves de usar clase pense usar funciones y llamarlas directamente
 
-
-def experiment_definition(X_train, X_test, y_train, y_test, model=None, input_value="mean"):
-    if model is None:
-        model = input(
-            "Que modelo desea aplicar?\n"
-            "(1) Random Forest\n"
-            "(2) Bagging\n"
-            "(3) Voting\n"
-            "(4) XGBoost\n"
-            "(5) LGBM\n"
-            "(6) Catboost\n"
-        )
-
-    models = {
-        "1": ("Random Forest", RandomForestClassifier()),
-        "2": ("Bagging", BaggingClassifier()),
-        "3": ("Voting", VotingClassifier(estimators=[
-            ("rf", RandomForestClassifier()),
-            ("bag", BaggingClassifier()),
-        ], voting="soft")),
-        "4": ("XGBoost", XGBClassifier(max_depth=5, n_estimators=100)),
-        "5": ("LGBM", LGBMClassifier()),
-        "6": ("CatBoost", CatBoostClassifier(verbose=0)),
-    }
-
-    if model not in models:
-        print("Opción inválida.")
-
-    run_name, algorithm = models[model]
+class ExperimientoClasificador:
+    def experiment_definition(X_train, X_test, y_train, y_test, model=None, input_value="mean"):
+        if model is None:
+            model = input(
+                "Que modelo desea aplicar?\n"
+                "(1) Random Forest\n"
+                "(2) Bagging\n"
+                "(3) Voting\n"
+                "(4) XGBoost\n"
+                "(5) LGBM\n"
+                "(6) Catboost\n"
+            )
     
-    with mlflow.start_run(run_name=run_name):
-        pipeline = Pipeline([
-            ("imputer", SimpleImputer(strategy=input_value)),
-            (run_name, algorithm),
-        ])
-
-        pipeline.fit(X_train, y_train)
-        predictions = pipeline.predict(X_test)
-
-        acc = accuracy_score(y_test, predictions)
-        f1 = f1_score(y_test, predictions, average="weighted")
-
-        mlflow.log_params({"model": run_name, "imputer": input_value})
-        mlflow.log_metrics({"accuracy": acc, "f1": f1})
-
-        print(f"{run_name} - Accuracy: {acc:.4f} | F1: {f1:.4f}")
-        print("\n📊 Métricas detalladas:")
-        metrics.clasificacionmetrics(y_test, predictions)
-
-    return pipeline
+        models = {
+            "1": ("Random Forest", RandomForestClassifier()),
+            "2": ("Bagging", BaggingClassifier()),
+            "3": ("Voting", VotingClassifier(estimators=[
+                ("rf", RandomForestClassifier()),
+                ("bag", BaggingClassifier()),
+            ], voting="soft")),
+            "4": ("XGBoost", XGBClassifier(max_depth=5, n_estimators=100)),
+            "5": ("LGBM", LGBMClassifier()),
+            "6": ("CatBoost", CatBoostClassifier(verbose=0)),
+        }
     
+        if model not in models:
+            print("Opción inválida.")
+    
+        run_name, algorithm = models[model]
+        
+        with mlflow.start_run(run_name=run_name):
+            pipeline = Pipeline([
+                ("imputer", SimpleImputer(strategy=input_value)),
+                (run_name, algorithm),
+            ])
+    
+            pipeline.fit(X_train, y_train)
+            predictions = pipeline.predict(X_test)
+    
+            acc = accuracy_score(y_test, predictions)
+            f1 = f1_score(y_test, predictions, average="weighted")
+    
+            mlflow.log_params({"model": run_name, "imputer": input_value})
+            mlflow.log_metrics({"accuracy": acc, "f1": f1})
+    
+            print(f"{run_name} - Accuracy: {acc:.4f} | F1: {f1:.4f}")
+            print("\n📊 Métricas detalladas:")
+            metrics.clasificacionmetrics(y_test, predictions)
+    
+        return pipeline
+        
 
 class Metricsdeploy:
-    def __init__(self, , scaler, labels, y):
+    def __init__(self, data, scaler, labels, y):
         self.scaler_method = scaler
         self.labels = labels
         self.y = y
+        self.data = data
         
     def pcavarianza(self, variance_ratio):
         return print(f'La varianza que se explica despues del PCA:{variance_ratio}')
@@ -207,23 +209,42 @@ class Metricsdeploy:
         precision = precision_score(y_true, y_pred, average="weighted")
         recall = recall_score(y_true, y_pred, average="weighted")
         f1 = f1_score(y_true, y_pred, average="weighted")
+        mlflow.log_artifac(cm)
+        mlflow.log_metrics(precision)
+        mlflow.log_metrics(recall)
+        mlflow.log_metrics(f1)
+        
 
         print("Métricas de Clasificación:")
         print(f"Matriz de Confusión:\n{cm}")
         print(f"Precisión: {precision:.3f}")
         print(f"Recall: {recall:.3f}")
         print(f"F1 Score: {f1:.3f}")
+        print('-----'*14)
+        print(classification_report(y_true, y_pred))
 
         return {"confusion_matrix": cm, "precision": precision, "recall": recall, "f1": f1}
         
         
-    def clusteringmetrics(self, X_scaled):
-        self.X_scaled = self.scaler_method
-        silhouette = silhouette_score(self.X_scaled, self.labels)
-        dbi = davies_bouldin_score(self.X_scaled, self.labels)
-        chi = calinski_harabasz_score(self.X_scaled, self.labels)
-        ari = adjusted_rand_score(self.y, self.labels) # compara clusters con etiquetas reales
+    def clusteringmetrics(self, data):
+        pipeline = Pipeline([("scaler", self.scaler_method)])
+        X_scaled = pipeline.fit_transform(data)
+        
+        silhouette = silhouette_score(X_scaled, self.labels)
+        
+        dbi = davies_bouldin_score(X_scaled, self.labels)
+        
+        chi = calinski_harabasz_score(X_scaled, self.labels)
+        
+        ari = adjusted_rand_score(self.y, self.labels) 
+        # compara clusters con etiquetas reales
         nmi = normalized_mutual_info_score(self.y, self.labels)
+        mlflow.log_metrics()
+        mlflow.log_metrics(silhouette)
+        mlflow.log_metrics(chi)
+        mlflow.log_metrics(ari)
+        mlflow.log_metrics(nmi)
+        
 
         print('Metricas de Clustering:')
         print(f"Silhouette Score: {silhouette:.3f}")
@@ -261,8 +282,9 @@ class Metricsdeploy:
 
 class UnsupervisedProcessor:
 
-    def __init__(self, dataframe: pd.DataFrame, scaler, cluster_algorithm, dim_reduction_algorithm) -> None:
+    def __init__(self, dataframe: pd.DataFrame, scaler, cluster_algorithm, dim_reduction_algorithm, orderby_columna: str) -> None:
         self.original_data = dataframe
+        self.orderby_columna = orderby_columna
         self.cluster_pipeline = Pipeline(
             steps=[
                 ("scaler", scaler),
@@ -282,11 +304,11 @@ class UnsupervisedProcessor:
         self.cluster_pipeline.fit(tmp_data_to_process)
         clustering_df = pd.concat(
             [
-                self.original_data[["CustomerID"]],
-                self.original_data[self.original_data.columns[-3:]],
+                self.original_data[self.orderby_columna],
+                self.original_data[self.original_data.columns[-3:]]-----,
                 pd.DataFrame(
                     self.cluster_pipeline.steps[1][1].labels_,
-                    columns=["cluster"]
+                    columns=["cluster"]-------
                 )
             ],
             axis=1
@@ -299,7 +321,7 @@ class UnsupervisedProcessor:
         tmp_data_to_process = self.original_data[columns]
         return pd.concat(
             [
-                self.original_data[["CustomerID"]],
+                self.original_data[self.orderby_columna],
                 pd.DataFrame(
                     self.dim_reduction_pipeline.fit_transform(tmp_data_to_process),
                     columns=["dim1", "dim2"]
@@ -313,7 +335,7 @@ class UnsupervisedProcessor:
         _cluster_results = self.__process_clustering(columns=columns)
         _dim_reduction_results = self.__process_dim_reduction(columns=columns)
 
-        return _cluster_results.merge(_dim_reduction_results,on="CustomerID")
+        return _cluster_results.merge(_dim_reduction_results,on=orderby_columna)
         
 
     def plot_results(data: pd.DataFrame):
@@ -323,7 +345,7 @@ class UnsupervisedProcessor:
 
     print(
         f"""
-        PCA varinza explciada: {}
+        PCA varianza explicada: {self.variance_ratio}
         Métrica Silloutte: {silhouette_score(X=data[customer_data_raw.columns[-3:]], labels=np.array(data['cluster']))}
         Métrica calinski_harabasz: {calinski_harabasz_score(X=data[customer_data_raw.columns[-3:]], labels=np.array(data['cluster']))}
         Métrica davies_bouldin: {davies_bouldin_score(X=data[customer_data_raw.columns[-3:]], labels=np.array(data['cluster']))}
