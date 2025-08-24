@@ -359,8 +359,8 @@ class UnsupervisedProcessor:
         sns.scatterplot(x="dim1", y="dim2", data=df_final, hue="cluster",palette="tab10")
 
     def calculate_clustering_metrics(data: pd.DataFrame):
-
-    print(
+        
+        print(
         f"""
         PCA varianza explicada: {self.variance_ratio}
         Métrica Silloutte: {silhouette_score(X=data[customer_data_raw.columns[-3:]], labels=np.array(data['cluster']))}
