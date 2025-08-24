@@ -107,30 +107,6 @@ class FeatureProcessor:
         
         
         #ayuda aca 
-class Metricsdeploy:
-    def pcavarianza(self, variance_ratio):
-        return print(f'La varianza que se explica despues del PCA:{variance_ratio}')
-
-    def clasificacionmetrics():
-        #Matriz de confusión, recall, f1 score y precisión
-        return
-    def clusteringmetrics(self, X_scaled, labels):
-        silhouette = silhouette_score(X_scaled, labels)
-        dbi = davies_bouldin_score(X_scaled, labels)
-        chi = calinski_harabasz_score(X_scaled, labels)
-        ari = adjusted_rand_score(y, labels) # compara clusters con etiquetas reales
-        nmi = normalized_mutual_info_score(y, labels)
-        
-        Sil = print(f"Silhouette Score: {silhouette:.3f}")
-        Dbouldin = print(f"Davies-Bouldin Index: {dbi:.3f}")
-        Charab = print(f"Calinski-Harabasz Index: {chi:.3f}")
-        ADI = print(f"Adjusted Rand Index {ari:.3f}")
-        NM = print(f"Normalized Mutual Info: {nmi:.3f}")
-        return Sil, Dbouldin, Charab, ADI, NM 
-    
-    
-    
-
 class GuardadoFeature:
 
 
@@ -211,11 +187,54 @@ def experiment_definition(X_train, X_test, y_train, y_test, model=None, input_va
         mlflow.log_metrics({"accuracy": acc, "f1": f1})
 
         print(f"{run_name} - Accuracy: {acc:.4f} | F1: {f1:.4f}")
+        print("\n📊 Métricas detalladas:")
+        metrics.clasificacionmetrics(y_test, predictions)
 
     return pipeline
     
 
+class Metricsdeploy:
+    def __init__(self, , scaler, labels, y):
+        self.scaler_method = scaler
+        self.labels = labels
+        self.y = y
+        
+    def pcavarianza(self, variance_ratio):
+        return print(f'La varianza que se explica despues del PCA:{variance_ratio}')
 
+    def clasificacionmetrics(self, y_true, y_pred):
+        cm = confusion_matrix(y_true, y_pred)
+        precision = precision_score(y_true, y_pred, average="weighted")
+        recall = recall_score(y_true, y_pred, average="weighted")
+        f1 = f1_score(y_true, y_pred, average="weighted")
+
+        print("Métricas de Clasificación:")
+        print(f"Matriz de Confusión:\n{cm}")
+        print(f"Precisión: {precision:.3f}")
+        print(f"Recall: {recall:.3f}")
+        print(f"F1 Score: {f1:.3f}")
+
+        return {"confusion_matrix": cm, "precision": precision, "recall": recall, "f1": f1}
+        
+        
+    def clusteringmetrics(self, X_scaled):
+        self.X_scaled = self.scaler_method
+        silhouette = silhouette_score(self.X_scaled, self.labels)
+        dbi = davies_bouldin_score(self.X_scaled, self.labels)
+        chi = calinski_harabasz_score(self.X_scaled, self.labels)
+        ari = adjusted_rand_score(self.y, self.labels) # compara clusters con etiquetas reales
+        nmi = normalized_mutual_info_score(self.y, self.labels)
+
+        print('Metricas de Clustering:')
+        print(f"Silhouette Score: {silhouette:.3f}")
+        print(f"Davies-Bouldin Index: {dbi:.3f}")
+        print(f"Calinski-Harabasz Index: {chi:.3f}")
+        print(f"Adjusted Rand Index {ari:.3f}")
+        print(f"Normalized Mutual Info: {nmi:.3f}")
+        
+    
+    
+    
 
 
 
