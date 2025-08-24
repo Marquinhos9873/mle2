@@ -180,11 +180,6 @@ class ExperimientoClasificador:
 
 
 
-class expermientoepsilon:
-    
-        
-
-
 
 
 
@@ -223,28 +218,8 @@ class Metricsdeploy:
     def pcavarianza(self, variance_ratio):
         return print(f'La varianza que se explica despues del PCA:{variance_ratio}')
 
-#    def clasificacionmetrics(self, y_true, y_pred):
-        
- #       cm = confusion_matrix(y_true, y_pred)
-  #      precision = precision_score(y_true, y_pred, average="weighted")
-   #     recall = recall_score(y_true, y_pred, average="weighted")
-    #    f1 = f1_score(y_true, y_pred, average="weighted")
-     #   mlflow.log_artifac(cm)
-      #  mlflow.log_metrics(precision)
-       # mlflow.log_metrics(recall)
-        #mlflow.log_metrics(f1)
 
-        
 
-        print("Métricas de Clasificación:")
-        print(f"Matriz de Confusión:\n{cm}")
-        print(f"Precisión: {precision:.3f}")
-        print(f"Recall: {recall:.3f}")
-        print(f"F1 Score: {f1:.3f}")
-        print('-----'*14)
-        print(classification_report(y_true, y_pred))
-        
-               
     def clusteringmetrics(self):
         
         pipeline = Pipeline([("scaler", self.scaler_method)])
@@ -274,6 +249,38 @@ class Metricsdeploy:
         print(f"Calinski-Harabasz Index: {chi:.3f}")
         print(f"Adjusted Rand Index {ari:.3f}")
         print(f"Normalized Mutual Info: {nmi:.3f}")
+        
+
+        
+
+
+
+
+
+        
+#    def clasificacionmetrics(self, y_true, y_pred):
+        
+#       cm = confusion_matrix(y_true, y_pred)
+#      precision = precision_score(y_true, y_pred, average="weighted")
+#     recall = recall_score(y_true, y_pred, average="weighted")
+#    f1 = f1_score(y_true, y_pred, average="weighted")
+#   mlflow.log_artifac(cm)
+#  mlflow.log_metrics(precision)
+# mlflow.log_metrics(recall)
+#mlflow.log_metrics(f1)
+
+        
+        '''
+        print("Métricas de Clasificación:")
+        print(f"Matriz de Confusión:\n{cm}")
+        print(f"Precisión: {precision:.3f}")
+        print(f"Recall: {recall:.3f}")
+        print(f"F1 Score: {f1:.3f}")
+        print('-----'*14)
+        '''
+        
+               
+    
         
     
     
