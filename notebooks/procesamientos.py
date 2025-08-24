@@ -107,35 +107,18 @@ class FeatureProcessor:
         
         
         #ayuda aca 
+        
 class GuardadoFeature:
-
-
-
-
     
+    def save_ml_model(ml_object, name):
+    """
+    Guarda modelos de ML
+    """
+    joblib.dump(ml_object, f"../models/{name}.joblib")
+    print("Model guaradado exitosamente")
 
 
-class expermientoepsilon:
-    def proceso_epsilon(self, n_muestreo: int, scaler_method, data): 
-        neighbors = NearestNeighbors(n_neighbors=n_muestreo)
-        pipeline = Pipeline([("scaler", scaler_method)])
-        X_scaled = pipeline.fit_transform(data)
-        neighbors_fit = neighbors.fit(X_scaled)
-        distances, indices = neighbors_fit.kneighbors(X_scaled)
-        
-        
-        distances = np.sort(distances[:, n_muestreo-1])
-        plt.plot(distances)
-        plt.ylabel(f"Distancia al {n_muestreo}-ésimo vecino")
-        plt.xlabel("Puntos ordenados")
-        plt.show()
-    
-        kneighbors_eps = input('Valor aproximado para el epsilon en base al grafico:')
-        dbscan = DBSCAN(eps=kneighbors_eps, min_samples=n_muestreo)
-        labels = dbscan.fit_predict(X_scaled)
 
-        return
-        
     
 
 #procesar con dbscan, 18 clusters(numero de columnas)'''
@@ -193,6 +176,34 @@ class ExperimientoClasificador:
     
         return pipeline
         
+
+
+
+class expermientoepsilon:
+    def proceso_epsilon(self, n_muestreo: int, scaler_method, data): 
+        neighbors = NearestNeighbors(n_neighbors=n_muestreo)
+        pipeline = Pipeline([("scaler", scaler_method)])
+        X_scaled = pipeline.fit_transform(data)
+        neighbors_fit = neighbors.fit(X_scaled)
+        distances, indices = neighbors_fit.kneighbors(X_scaled)
+        
+        
+        distances = np.sort(distances[:, n_muestreo-1])
+        plt.plot(distances)
+        plt.ylabel(f"Distancia al {n_muestreo}-ésimo vecino")
+        plt.xlabel("Puntos ordenados")
+        plt.show()
+    
+        kneighbors_eps = input('Valor aproximado para el epsilon en base al grafico:')
+        dbscan = DBSCAN(eps=kneighbors_eps, min_samples=n_muestreo)
+        labels = dbscan.fit_predict(X_scaled)
+
+        return
+        
+
+
+
+
 
 class Metricsdeploy:
     def __init__(self, data, scaler, labels, y):
