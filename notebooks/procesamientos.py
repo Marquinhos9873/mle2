@@ -44,25 +44,37 @@ class FeatureProcessor:
         self.name_pipeline = name_pipeline
         self.feature_table = None
 
-    def scale(self, columnas: tuple[str, ...], components: int = 3) -> pd.DataFrame:
+    def scale(self, columnas: tuple[str, ...], components: int) -> pd.DataFrame:
+        
         pca = PCA(n_components = components)
-        pipe = Pipeline(steps=[ ("std_scaling", StandardScaler()),("pca", pca)])
+        pipe = Pipeline(steps=[("std_scaling", StandardScaler()),("pca", pca)])
+        
+        self.pca = pca
+        self.pipe = pipe
+        
         X = self.datos.loc[:, list(columnas)]
         Z = pipe.fit_transform(X)
+        
         variance_ratio = pca.explained_variance_ratio_
         print(f"Variance ratio: {variance_ratio}")
+        
         #agregar aqui y devolver como variance_ratio en el return
+        
         pipe_df = pd.DataFrame(Z, columns=[f"Pipe_feature{i+1}" for i in range(components)])
+        
         return pipe_df, variance_ratio
 
 
 #Una ves que se creen los pca_features agregarse al dataset final
 
 
-    def run(self, columnas_promedio: tuple[str, ...], num_columnas: int) -> pd.DataFrame:
+    def run(self, columnas_promedio: tuple[str, ...]) -> pd.DataFrame:
+        
         #tengo un problema con el pyproject vim/nano
         #logger.info(f"Inicializando pipeline {self.name_pipeline}")
         #numerics = self.scale()
+        
+        pipe_df, variance_ratio = self.scale(columnas = columnas_promedio)
         media_stress = (self.datos[list(columnas_promedio)].mean(axis=1))
         media_df = pd.DataFrame({"stress_exposure_mean": media_stress})
         modeling_dataset = pd.concat([pipe_df, media_df], axis=1)
@@ -77,8 +89,6 @@ class FeatureProcessor:
             pipe.fit_transform(modeling_dataset),
             columns=modeling_dataset.columns
         )
-          
-
         return self.feature_table
 
     def write_feature_table(self, filepath: str) -> None:
@@ -98,6 +108,7 @@ class Metricsdeploy:
         return print(f'La varianza que se explica despues del PCA:{variance_ratio}')
 
     def clasificacionmetrics():
+        #Matriz de confusión, recall, f1 score y precisión
         return
     def clusteringmetrics(self, X_scaled, labels):
         silhouette = silhouette_score(X_scaled, labels)
@@ -179,7 +190,7 @@ def experiment_definition(X_train, X_test, y_train, y_test, model=None, input_va
         print("Opción inválida.")
 
     run_name, algorithm = models[model]
-
+    
     with mlflow.start_run(run_name=run_name):
         pipeline = Pipeline([
             ("imputer", SimpleImputer(strategy=input_value)),
@@ -282,10 +293,10 @@ class UnsupervisedProcessor:
         return _cluster_results.merge(_dim_reduction_results,on="CustomerID")
         
 
-def plot_results(data: pd.DataFrame):
-    sns.scatterplot(x="dim1", y="dim2", data=df_final, hue="cluster",palette="tab10")
+    def plot_results(data: pd.DataFrame):
+        sns.scatterplot(x="dim1", y="dim2", data=df_final, hue="cluster",palette="tab10")
 
-def calculate_clustering_metrics(data: pd.DataFrame):
+    def calculate_clustering_metrics(data: pd.DataFrame):
 
     print(
         f"""
