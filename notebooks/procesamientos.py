@@ -39,30 +39,34 @@ from loguru
 
 
 class FeatureProcessor:
-    def __init__(self, datos: pd.DataFrame, name_pipeline: str):
+    def __init__(self, datos: pd.DataFrame, name_pipeline: str,  columnas: tuple[str, ...], components: int):
+        
         self.datos = datos
         self.name_pipeline = name_pipeline
         self.feature_table = None
-
-    def scale(self, columnas: tuple[str, ...], components: int) -> pd.DataFrame:
+        self.columnas = columnas
+        self.components = components
+        self.variance_ratio = None
         
-        pca = PCA(n_components = components)
+    def scale(self) -> pd.DataFrame:
+        
+        pca = PCA(n_components = self.components)
         pipe = Pipeline(steps=[("std_scaling", StandardScaler()),("pca", pca)])
         
         self.pca = pca
         self.pipe = pipe
         
-        X = self.datos.loc[:, list(columnas)]
+        X = self.datos.loc[:, list(self.columnas)]
         Z = pipe.fit_transform(X)
         
-        variance_ratio = pca.explained_variance_ratio_
-        print(f"Variance ratio: {variance_ratio}")
+        self.variance_ratio = pca.explained_variance_ratio_
+        print(f"Variance ratio: {self.variance_ratio}")
         
         #agregar aqui y devolver como variance_ratio en el return
         
-        pipe_df = pd.DataFrame(Z, columns=[f"Pipe_feature{i+1}" for i in range(components)])
+        pipe_df = pd.DataFrame(Z, columns=[f"Pipe_feature{i+1}" for i in range(self.components)])
         
-        return pipe_df, variance_ratio
+        return pipe_df, self.variance_ratio
 
 
 #Una ves que se creen los pca_features agregarse al dataset final
@@ -342,10 +346,9 @@ class UnsupervisedProcessor:
 
 class ProcesoMLFLOW:
     def config_uri(self, uri: str):
-        uri = input("Introduce la URL del servidor MLflow: ")
         mlflow.set_tracking_uri(uri)
-        tracking = print(f"Tracking URI configurado en: {uri}")
-        return tracking
+        print(f"Tracking URI configurado en: {uri}")
+        return uri
     
 
 
