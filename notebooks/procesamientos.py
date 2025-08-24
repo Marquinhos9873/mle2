@@ -166,9 +166,10 @@ class ExperimientoClasificador:
     
             acc = accuracy_score(y_test, predictions)
             f1 = f1_score(y_test, predictions, average="weighted")
+            recall = recall_score(y_true, y_pred, average="weighted")
     
             mlflow.log_params({"model": run_name, "imputer": input_value})
-            mlflow.log_metrics({"accuracy": acc, "f1": f1})
+            mlflow.log_metrics({"accuracy": acc, "f1": f1, "recall": recall})
     
             print(f"{run_name} - Accuracy: {acc:.4f} | F1: {f1:.4f}")
             print("\n📊 Métricas detalladas:")
@@ -180,25 +181,7 @@ class ExperimientoClasificador:
 
 
 class expermientoepsilon:
-    def proceso_epsilon(self, n_muestreo: int, scaler_method, data): 
-        neighbors = NearestNeighbors(n_neighbors=n_muestreo)
-        pipeline = Pipeline([("scaler", scaler_method)])
-        X_scaled = pipeline.fit_transform(data)
-        neighbors_fit = neighbors.fit(X_scaled)
-        distances, indices = neighbors_fit.kneighbors(X_scaled)
-        
-        
-        distances = np.sort(distances[:, n_muestreo-1])
-        plt.plot(distances)
-        plt.ylabel(f"Distancia al {n_muestreo}-ésimo vecino")
-        plt.xlabel("Puntos ordenados")
-        plt.show()
     
-        kneighbors_eps = input('Valor aproximado para el epsilon en base al grafico:')
-        dbscan = DBSCAN(eps=kneighbors_eps, min_samples=n_muestreo)
-        labels = dbscan.fit_predict(X_scaled)
-
-        return
         
 
 
@@ -206,24 +189,50 @@ class expermientoepsilon:
 
 
 class Metricsdeploy:
-    def __init__(self, data, scaler, labels, y):
+    def __init__(self, data, scaler, labels_clustering_dbscan, y, n_muestreo = 5):
         self.scaler_method = scaler
-        self.labels = labels
+        self.labels_clustering_dbscan = None
         self.y = y
         self.data = data
+        self.n_muestreo = n_muestreo
+        self.X_scaled = None
+        
+    def proceso_epsilon(self): 
+        neighbors = NearestNeighbors(n_neighbors=self.n_muestreo)
+        pipeline = Pipeline([("scaler", self.scaler_method)])
+        X_scaled = pipeline.fit_transform(self.data)
+        neighbors_fit = neighbors.fit(self.X_scaled)
+        distances, indices = neighbors_fit.kneighbors(sef.X_scaled)
+        
+        
+        distances = np.sort(distances[:, self.n_muestreo-1])
+        plt.plot(distances)
+        plt.ylabel(f"Distancia al {self.n_muestreo}-ésimo vecino")
+        plt.xlabel("Puntos ordenados")
+        plt.show()
+    
+        kneighbors_eps = input('Valor aproximado para el epsilon en base al grafico:')
+        dbscan = DBSCAN(eps=kneighbors_eps, min_samples=self.n_muestreo)
+        self.labels_clustering_dbscan = dbscan.fit_predict(self.X_scaled)
+
+        return self.labels_clustering_dbscan, self.X_scaled
+
+
+        
         
     def pcavarianza(self, variance_ratio):
         return print(f'La varianza que se explica despues del PCA:{variance_ratio}')
 
-    def clasificacionmetrics(self, y_true, y_pred):
-        cm = confusion_matrix(y_true, y_pred)
-        precision = precision_score(y_true, y_pred, average="weighted")
-        recall = recall_score(y_true, y_pred, average="weighted")
-        f1 = f1_score(y_true, y_pred, average="weighted")
-        mlflow.log_artifac(cm)
-        mlflow.log_metrics(precision)
-        mlflow.log_metrics(recall)
-        mlflow.log_metrics(f1)
+#    def clasificacionmetrics(self, y_true, y_pred):
+        
+ #       cm = confusion_matrix(y_true, y_pred)
+  #      precision = precision_score(y_true, y_pred, average="weighted")
+   #     recall = recall_score(y_true, y_pred, average="weighted")
+    #    f1 = f1_score(y_true, y_pred, average="weighted")
+     #   mlflow.log_artifac(cm)
+      #  mlflow.log_metrics(precision)
+       # mlflow.log_metrics(recall)
+        #mlflow.log_metrics(f1)
 
         
 
@@ -234,29 +243,30 @@ class Metricsdeploy:
         print(f"F1 Score: {f1:.3f}")
         print('-----'*14)
         print(classification_report(y_true, y_pred))
-
-        return {"confusion_matrix": cm, "precision": precision, "recall": recall, "f1": f1}
         
+               
+    def clusteringmetrics(self):
         
-    def clusteringmetrics(self, data):
         pipeline = Pipeline([("scaler", self.scaler_method)])
         X_scaled = pipeline.fit_transform(data)
         
-        silhouette = silhouette_score(X_scaled, self.labels)
+        silhouette = silhouette_score(self.X_scaled, self.labels_clustering_dbscan)
         
-        dbi = davies_bouldin_score(X_scaled, self.labels)
+        dbi = davies_bouldin_score(self.X_scaled, self.labels_clustering_dbscan)
         
-        chi = calinski_harabasz_score(X_scaled, self.labels)
+        chi = calinski_harabasz_score(self.X_scaled, self.labels_clustering_dbscan)
         
-        ari = adjusted_rand_score(self.y, self.labels) 
+        ari = adjusted_rand_score(self.y, self.labels_clustering_dbscan) 
         # compara clusters con etiquetas reales
-        nmi = normalized_mutual_info_score(self.y, self.labels)
-        mlflow.log_metrics()
-        mlflow.log_metrics(silhouette)
-        mlflow.log_metrics(chi)
-        mlflow.log_metrics(ari)
-        mlflow.log_metrics(nmi)
+        nmi = normalized_mutual_info_score(self.y, self.labels_clustering_dbscan)
+
+        mlflow.log_metrics({"Calinski": chi, "Adjusted rnd score": ari, "Normalized Mutual": nmi, "Silhoutte": silhouette, "Davies_Bouldin": dbi})
         
+#        mlflow.log_metrics(silhouette)
+#        mlflow.log_metrics(dbi)
+#        mlflow.log_metrics(chi)
+#        mlflow.log_metrics(ari)
+#        mlflow.log_metrics(nmi)
 
         print('Metricas de Clustering:')
         print(f"Silhouette Score: {silhouette:.3f}")
