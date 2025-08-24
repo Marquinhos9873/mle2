@@ -1,6 +1,5 @@
 import mlflow
-from datetime import datetime
-import os
+import pandas as pd
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
@@ -14,7 +13,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
     silhouette_score, davies_bouldin_score, calinski_harabasz_score,
-    adjusted_rand_score, normalized_mutual_info_score
+    adjusted_rand_score, normalized_mutual_info_score, classification_report,
+    confusion_matrix, ConfusionMatrixDisplay
 )
 from sklearn.preprocessing import StandardScaler
 from feast import (
@@ -142,7 +142,8 @@ class ExperimientoClasificador:
             print("Opción inválida.")
     
         run_name, algorithm = models[model]
-        
+
+        mlflow.autolog(log_models=True)
         with mlflow.start_run(run_name=run_name):
             pipeline = Pipeline([
                 ("imputer", SimpleImputer(strategy=input_value)),
@@ -154,15 +155,23 @@ class ExperimientoClasificador:
     
             acc = accuracy_score(y_test, predictions)
             f1 = f1_score(y_test, predictions, average="weighted")
-            recall = recall_score(y_true, y_pred, average="weighted")
+            recall = recall_score(y_test, predictions, average="weighted")
     
             mlflow.log_params({"model": run_name, "imputer": input_value})
             mlflow.log_metrics({"accuracy": acc, "f1": f1, "recall": recall})
     
-            print(f"{run_name} - Accuracy: {acc:.4f} | F1: {f1:.4f}")
+            #print(f"{run_name} - Accuracy: {acc:.4f} | F1: {f1:.4f}")
             print("\n📊 Métricas detalladas:")
-            metrics.clasificacionmetrics(y_test, predictions)
-    
+            report = classification_report(y_test, predictions)
+            print(report)
+            print("-"*20)
+            print("Recall:",recall)
+            print("-"*20)
+            cm = confusion_matrix(y_test, predictions)
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+            disp.plot(cmap="Blues")
+            plt.show()
+                
         return pipeline
         
 
@@ -185,7 +194,7 @@ class Metricsdeploy:
         pipeline = Pipeline([("scaler", self.scaler_method)])
         X_scaled = pipeline.fit_transform(self.data)
         neighbors_fit = neighbors.fit(self.X_scaled)
-        distances, indices = neighbors_fit.kneighbors(sef.X_scaled)
+        distances, indices = neighbors_fit.kneighbors(self.X_scaled)
         
         
         distances = np.sort(distances[:, self.n_muestreo-1])
@@ -208,11 +217,7 @@ class Metricsdeploy:
 
 
 
-    def clusteringmetrics(self):
-        
-        pipeline = Pipeline([("scaler", self.scaler_method)])
-        X_scaled = pipeline.fit_transform(data)
-        
+    def clusteringmetrics(self):        
         silhouette = silhouette_score(self.X_scaled, self.labels_clustering_dbscan)
         
         dbi = davies_bouldin_score(self.X_scaled, self.labels_clustering_dbscan)
@@ -292,88 +297,6 @@ class Metricsdeploy:
 
 
 
-
-
-
-
-
-class UnsupervisedProcessor:
-
-    def __init__(self, dataframe: pd.DataFrame, scaler, cluster_algorithm, dim_reduction_algorithm, orderby_columna: str) -> None:
-        self.original_data = dataframe
-        self.orderby_columna = orderby_columna
-        self.cluster_pipeline = Pipeline(
-            steps=[
-                ("scaler", scaler),
-                ("cluster_algorithm", cluster_algorithm)
-            ]
-        )
-        self.dim_reduction_pipeline = Pipeline(
-            steps=[
-                ("scaler", scaler),
-                ("dim_reduction", dim_reduction_algorithm)
-            ]
-        )
-
-    def process_clustering(self, columns: list) -> pd.DataFrame:
-
-        tmp_data_to_process = self.original_data[columns]
-        self.cluster_pipeline.fit(tmp_data_to_process)
-        clustering_df = pd.concat(
-            [
-                self.original_data[self.orderby_columna],
-                self.original_data[self.original_data.columns[-3:]],
-                pd.DataFrame(
-                    self.cluster_pipeline.steps[1][1].labels_,
-                    columns=["cluster"]
-                )
-            ],
-            axis=1
-        )
-
-        return clustering_df
-
-    def process_dim_reduction(self, columns: list) -> pd.DataFrame:
-
-        tmp_data_to_process = self.original_data[columns]
-        return pd.concat(
-            [
-                self.original_data[self.orderby_columna],
-                pd.DataFrame(
-                    self.dim_reduction_pipeline.fit_transform(tmp_data_to_process),
-                    columns=["dim1", "dim2"]
-                )
-            ],
-            axis=1
-        )
-
-    def run(self, columns: list) -> pd.DataFrame:
-
-        _cluster_results = self.__process_clustering(columns=columns)
-        _dim_reduction_results = self.__process_dim_reduction(columns=columns)
-
-        return _cluster_results.merge(_dim_reduction_results,on=orderby_columna)
-        
-
-    def plot_results(data: pd.DataFrame):
-        sns.scatterplot(x="dim1", y="dim2", data=df_final, hue="cluster",palette="tab10")
-
-    def calculate_clustering_metrics(data: pd.DataFrame):
-        
-        print(
-        f"""
-        PCA varianza explicada: {self.variance_ratio}
-        Métrica Silloutte: {silhouette_score(X=data[customer_data_raw.columns[-3:]], labels=np.array(data['cluster']))}
-        Métrica calinski_harabasz: {calinski_harabasz_score(X=data[customer_data_raw.columns[-3:]], labels=np.array(data['cluster']))}
-        Métrica davies_bouldin: {davies_bouldin_score(X=data[customer_data_raw.columns[-3:]], labels=np.array(data['cluster']))}
-        Adjusted Rand Index: { adjusted_rand_score(y, labels_pred)}
-        Normalized Mutual Score : {normalized_mutual_info_score(y, labels)}
-        """
-        )
-
-
-    plot_results(data=data)
-    
 
 
 
