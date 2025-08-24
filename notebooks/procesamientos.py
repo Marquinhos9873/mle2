@@ -107,17 +107,7 @@ class FeatureProcessor:
         
         
         #ayuda aca 
-        
-#class GuardadoFeature:
-        
-#    def save_ml_model(ml_object, name):
-#    "Guarda modelos de ML"
-#    joblib.dump(ml_object, f"../models/{name}.joblib")
-#    print("Model guaradado exitosamente")
 
-
-
-    
 
 #procesar con dbscan, 18 clusters(numero de columnas)'''
 
@@ -332,10 +322,10 @@ class UnsupervisedProcessor:
         clustering_df = pd.concat(
             [
                 self.original_data[self.orderby_columna],
-                self.original_data[self.original_data.columns[-3:]]-----,
+                self.original_data[self.original_data.columns[-3:]],
                 pd.DataFrame(
                     self.cluster_pipeline.steps[1][1].labels_,
-                    columns=["cluster"]-------
+                    columns=["cluster"]
                 )
             ],
             axis=1
