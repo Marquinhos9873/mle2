@@ -108,14 +108,12 @@ class FeatureProcessor:
         
         #ayuda aca 
         
-class GuardadoFeature:
-    
-    def save_ml_model(ml_object, name):
-    """
-    Guarda modelos de ML
-    """
-    joblib.dump(ml_object, f"../models/{name}.joblib")
-    print("Model guaradado exitosamente")
+#class GuardadoFeature:
+        
+#    def save_ml_model(ml_object, name):
+#    "Guarda modelos de ML"
+#    joblib.dump(ml_object, f"../models/{name}.joblib")
+#    print("Model guaradado exitosamente")
 
 
 
