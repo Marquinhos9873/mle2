@@ -1,0 +1,15 @@
+artifact_uri: file:///home/marquinhoslinux/mle2/notebooks/mlruns/0/5eb2f2e6deea41ddbc8257a16ca3bdbe/artifacts
+end_time: 1756079194203
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 5eb2f2e6deea41ddbc8257a16ca3bdbe
+run_name: calm-gull-651
+run_uuid: 5eb2f2e6deea41ddbc8257a16ca3bdbe
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1756078645733
+status: 3
+tags: []
+user_id: marquinhoslinux

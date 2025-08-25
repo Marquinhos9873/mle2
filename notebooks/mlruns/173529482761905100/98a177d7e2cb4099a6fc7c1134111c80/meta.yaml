@@ -1,0 +1,15 @@
+artifact_uri: file:///home/marquinhoslinux/mle2/notebooks/mlruns/173529482761905100/98a177d7e2cb4099a6fc7c1134111c80/artifacts
+end_time: 1756082621589
+entry_point_name: ''
+experiment_id: '173529482761905100'
+lifecycle_stage: active
+run_id: 98a177d7e2cb4099a6fc7c1134111c80
+run_name: TS ensemble
+run_uuid: 98a177d7e2cb4099a6fc7c1134111c80
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1756082621462
+status: 4
+tags: []
+user_id: marquinhoslinux
